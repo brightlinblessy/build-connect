@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Profile photos: owner can upload/replace their own, anyone can view.
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Project attachments (drawings, PDFs, docs): any signed-in user
+    // can upload; readable by any signed-in user (client + applying
+    // engineers all need access).
+    match /projects/{projectId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // Quotation attachments
+    match /quotations/{quotationId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // Civil Engineer registration documents: resume/CV, degree
+    // certificate, government ID (Aadhaar/PAN), portfolio images.
+    // Only the owner can upload their own documents; readable by any
+    // signed-in user (clients need to view resume/degree/portfolio
+    // when evaluating an engineer, consistent with the other rules
+    // above).
+    match /engineers/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId
+                   && request.resource.size < 20 * 1024 * 1024;
+    }
+  }
+}

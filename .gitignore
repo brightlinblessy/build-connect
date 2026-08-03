@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+
+# Never commit this — it's a Firebase service account private key,
+# used only by scripts/wipe-data.js on your own machine.
+scripts/serviceAccountKey.json
